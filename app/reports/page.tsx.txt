@@ -1,0 +1,71 @@
+'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function Reports() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) router.push('/login');
+  }, []);
+
+  return (
+    <div style={{minHeight: '100vh', background: '#f3f4f6', padding: '32px'}}>
+      <div style={{maxWidth: '1280px', margin: '0 auto'}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px'}}>
+          <h1 style={{fontSize: '36px', fontWeight: 'bold', color: '#111827'}}>Reports</h1>
+          <button style={{background: '#4f46e5', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600'}}>Export CSV</button>
+        </div>
+
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px'}}>
+          <div style={{background: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'}}>
+            <h2 style={{fontSize: '20px', fontWeight: '600', marginBottom: '16px'}}>Campaign Summary</h2>
+            <div style={{space: '12px'}}>
+              <div style={{display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb'}}>
+                <span style={{color: '#4b5563'}}>Total Campaigns:</span>
+                <span style={{fontWeight: '600', color: '#111827'}}>5</span>
+              </div>
+              <div style={{display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb'}}>
+                <span style={{color: '#4b5563'}}>Total Leads:</span>
+                <span style={{fontWeight: '600', color: '#111827'}}>245</span>
+              </div>
+              <div style={{display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb'}}>
+                <span style={{color: '#4b5563'}}>Emails Sent:</span>
+                <span style={{fontWeight: '600', color: '#111827'}}>1,203</span>
+              </div>
+              <div style={{display: 'flex', justifyContent: 'space-between', paddingTop: '8px'}}>
+                <span style={{color: '#4b5563', fontWeight: '600'}}>Response Rate:</span>
+                <span style={{fontWeight: '600', color: '#059669'}}>12.9%</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{background: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'}}>
+            <h2 style={{fontSize: '20px', fontWeight: '600', marginBottom: '16px'}}>Usage This Month</h2>
+            <div style={{space: '16px'}}>
+              <div>
+                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '14px'}}>
+                  <span style={{color: '#4b5563'}}>Emails Sent</span>
+                  <span style={{fontWeight: '600'}}>450 / 500</span>
+                </div>
+                <div style={{background: '#e5e7eb', height: '8px', borderRadius: '4px', overflow: 'hidden'}}>
+                  <div style={{background: '#4f46e5', height: '100%', width: '90%'}}></div>
+                </div>
+              </div>
+              <div>
+                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '14px'}}>
+                  <span style={{color: '#4b5563'}}>Leads Imported</span>
+                  <span style={{fontWeight: '600'}}>245 / 500</span>
+                </div>
+                <div style={{background: '#e5e7eb', height: '8px', borderRadius: '4px', overflow: 'hidden'}}>
+                  <div style={{background: '#4f46e5', height: '100%', width: '49%'}}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

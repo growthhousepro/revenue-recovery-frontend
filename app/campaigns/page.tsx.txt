@@ -1,0 +1,62 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function Campaigns() {
+  const router = useRouter();
+  const [showForm, setShowForm] = useState(false);
+  const [campaigns, setCampaigns] = useState([
+    { id: 1, name: 'Campaign 1', client_name: 'Acme Corp', total_leads: 45, emails_sent: 32, replies_received: 8, is_active: true },
+    { id: 2, name: 'Campaign 2', client_name: 'Tech Startup', total_leads: 120, emails_sent: 95, replies_received: 22, is_active: true },
+  ]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) router.push('/login');
+  }, []);
+
+  return (
+    <div style={{minHeight: '100vh', background: '#f3f4f6', padding: '32px'}}>
+      <div style={{maxWidth: '1280px', margin: '0 auto'}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px'}}>
+          <h1 style={{fontSize: '36px', fontWeight: 'bold', color: '#111827'}}>Campaigns</h1>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            style={{background: '#4f46e5', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600'}}
+          >
+            + New Campaign
+          </button>
+        </div>
+
+        {showForm && (
+          <div style={{background: 'white', borderRadius: '8px', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'}}>
+            <input type="text" placeholder="Campaign Name" style={{width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', marginBottom: '12px'}} />
+            <input type="text" placeholder="Client Name" style={{width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', marginBottom: '12px'}} />
+            <button style={{background: '#4f46e5', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer'}}>Create</button>
+          </div>
+        )}
+
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px'}}>
+          {campaigns.map((c: any) => (
+            <div key={c.id} style={{background: 'white', borderRadius: '8px', padding: '16px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'}}>
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px'}}>
+                <div>
+                  <h3 style={{fontWeight: 'bold', color: '#111827'}}>{c.name}</h3>
+                  <p style={{fontSize: '14px', color: '#4b5563'}}>{c.client_name}</p>
+                </div>
+                <span style={{background: c.is_active ? '#d1fae5' : '#f3f4f6', color: c.is_active ? '#065f46' : '#4b5563', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600'}}>
+                  {c.is_active ? 'Active' : 'Paused'}
+                </span>
+              </div>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', textAlign: 'center', fontSize: '14px'}}>
+                <div><p style={{fontSize: '20px', fontWeight: 'bold'}}>{c.total_leads}</p><p style={{color: '#4b5563'}}>Leads</p></div>
+                <div><p style={{fontSize: '20px', fontWeight: 'bold'}}>{c.emails_sent}</p><p style={{color: '#4b5563'}}>Sent</p></div>
+                <div><p style={{fontSize: '20px', fontWeight: 'bold'}}>{c.replies_received}</p><p style={{color: '#4b5563'}}>Replies</p></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
