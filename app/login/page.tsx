@@ -131,13 +131,7 @@ export default function LoginPage() {
         </button>
 
         <p style={{ fontSize: '14px', color: '#4b5563', marginTop: '16px', textAlign: 'center' }}>
-          Don't have an account?{' '}
-          
-            href="/register"
-            style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: '600', cursor: 'pointer' }}
-          >
-            Register here
-          </a>
+          Don't have an account? <a href="/register" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: '600' }}>Register here</a>
         </p>
       </div>
     </div>
