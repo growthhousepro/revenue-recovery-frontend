@@ -5,155 +5,241 @@ import { useRouter } from 'next/navigation';
 
 export default function Settings() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('general');
-  const [settings, setSettings] = useState({
-    company_name: 'Your Company',
-    email: 'admin@company.com',
-    billing_email: 'billing@company.com',
-    plan: 'Professional',
-  });
+  const [senderEmail, setSenderEmail] = useState('');
+  const [notifyOnReply, setNotifyOnReply] = useState(true);
+  const [notifyOnBooking, setNotifyOnBooking] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
-    const company = localStorage.getItem('company');
     if (!token) {
       router.push('/login');
-    } else if (company) {
-      const companyData = JSON.parse(company);
-      setSettings({...settings, company_name: companyData.name});
+      return;
     }
+
+    fetchSettings(token);
   }, []);
+
+  const fetchSettings = async (token: string) => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // Get user info
+      const userRes = await fetch('http://localhost:8000/api/auth/me', {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        // setSenderEmail is handled after fetching notifications
+      }
+
+      // Get notification preferences
+      const notifRes = await fetch('http://localhost:8000/api/notifications/preferences', {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (notifRes.ok) {
+        const notifData = await notifRes.json();
+        setNotifyOnReply(notifData.notify_on_reply);
+        setNotifyOnBooking(notifData.notify_on_booking);
+      }
+    } catch (error: any) {
+      setError(`Network error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingEmail(true);
+    setError('');
+    setSuccess('');
+    const token = localStorage.getItem('access_token');
+
+    try {
+      const res = await fetch('http://localhost:8000/api/auth/update-sender-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ sender_email: senderEmail }),
+      });
+
+      if (res.ok) {
+        setSuccess('Sender email updated successfully!');
+      } else {
+        const data = await res.json();
+        setError(data.detail || 'Failed to update email');
+      }
+    } catch (error: any) {
+      setError(`Error: ${error.message}`);
+    } finally {
+      setSavingEmail(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    setSavingNotifications(true);
+    setError('');
+    setSuccess('');
+    const token = localStorage.getItem('access_token');
+
+    try {
+      const res = await fetch('http://localhost:8000/api/notifications/preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          notify_on_reply: notifyOnReply,
+          notify_on_booking: notifyOnBooking,
+        }),
+      });
+
+      if (res.ok) {
+        setSuccess('Notification preferences updated successfully!');
+      } else {
+        const data = await res.json();
+        setError(data.detail || 'Failed to update preferences');
+      }
+    } catch (error: any) {
+      setError(`Error: ${error.message}`);
+    } finally {
+      setSavingNotifications(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <ProtectedLayout>
+        <div style={{ textAlign: 'center', padding: '32px' }}>
+          <p>Loading settings...</p>
+        </div>
+      </ProtectedLayout>
+    );
+  }
 
   return (
     <ProtectedLayout>
-      <div style={{maxWidth: '1280px'}}>
-        <h1 style={{fontSize: '36px', fontWeight: 'bold', color: '#111827', marginBottom: '32px', margin: 0}}>Settings</h1>
+      <div style={{ maxWidth: '800px' }}>
+        <h1 style={{ fontSize: '36px', fontWeight: 'bold', color: '#111827', margin: '0 0 32px 0' }}>Settings</h1>
 
-        <div style={{display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px'}}>
-          <div style={{background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
-            <div style={{borderBottom: '1px solid #e5e7eb', padding: '16px'}}>
-              <h2 style={{fontWeight: '600', color: '#111827', margin: 0}}>Settings</h2>
+        {error && <div style={{ background: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '6px', marginBottom: '24px' }}>{error}</div>}
+        {success && <div style={{ background: '#dcfce7', color: '#166534', padding: '12px', borderRadius: '6px', marginBottom: '24px' }}>{success}</div>}
+
+        {/* Sender Email */}
+        <div style={{ background: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '32px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', margin: '0 0 16px 0' }}>Email Settings</h2>
+          
+          <form onSubmit={handleSaveEmail} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#111827', marginBottom: '6px' }}>
+                Sender Email Address
+              </label>
+              <input
+                type="email"
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+                placeholder="your-email@company.com"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  color: '#111827',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <p style={{ fontSize: '11px', color: '#4b5563', margin: '4px 0 0 0' }}>
+                This email will be used as the "From" address when sending campaigns
+              </p>
             </div>
-            <nav style={{display: 'flex', flexDirection: 'column'}}>
-              {['general', 'email', 'billing', 'team', 'security'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '12px 16px',
-                    background: activeTab === tab ? '#f3f4f6' : 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: activeTab === tab ? '#4f46e5' : '#4b5563',
-                    fontSize: '14px',
-                    borderBottom: '1px solid #f3f4f6',
-                    fontWeight: activeTab === tab ? '600' : '400',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </nav>
+
+            <button
+              type="submit"
+              disabled={savingEmail}
+              style={{
+                background: '#4f46e5',
+                color: 'white',
+                padding: '10px 16px',
+                borderRadius: '6px',
+                border: 'none',
+                cursor: savingEmail ? 'not-allowed' : 'pointer',
+                fontWeight: '600',
+                fontSize: '14px',
+                opacity: savingEmail ? 0.6 : 1,
+              }}
+            >
+              {savingEmail ? 'Saving...' : 'Save Email'}
+            </button>
+          </form>
+        </div>
+
+        {/* Notification Preferences */}
+        <div style={{ background: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', margin: '0 0 16px 0' }}>Notification Preferences</h2>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid #e5e7eb' }}>
+              <div>
+                <p style={{ fontSize: '14px', fontWeight: '600', color: '#111827', margin: 0 }}>Email Replies</p>
+                <p style={{ fontSize: '12px', color: '#4b5563', margin: '4px 0 0 0' }}>Get notified when someone replies to your campaign</p>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={notifyOnReply}
+                  onChange={(e) => setNotifyOnReply(e.target.checked)}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid #e5e7eb' }}>
+              <div>
+                <p style={{ fontSize: '14px', fontWeight: '600', color: '#111827', margin: 0 }}>Booking Confirmations</p>
+                <p style={{ fontSize: '12px', color: '#4b5563', margin: '4px 0 0 0' }}>Get notified when a booking is confirmed and charged</p>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={notifyOnBooking}
+                  onChange={(e) => setNotifyOnBooking(e.target.checked)}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+              </label>
+            </div>
           </div>
 
-          <div style={{background: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'}}>
-            {activeTab === 'general' && (
-              <div>
-                <h2 style={{fontSize: '20px', fontWeight: '600', marginBottom: '16px', margin: 0}}>General Settings</h2>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                  <div>
-                    <label style={{display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px'}}>Company Name</label>
-                    <input type="text" value={settings.company_name} onChange={(e) => setSettings({...settings, company_name: e.target.value})} style={{width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', boxSizing: 'border-box'}} />
-                  </div>
-
-                  <div>
-                    <label style={{display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px'}}>Email</label>
-                    <input type="email" value={settings.email} onChange={(e) => setSettings({...settings, email: e.target.value})} style={{width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', boxSizing: 'border-box'}} />
-                  </div>
-
-                  <button style={{background: '#4f46e5', color: 'white', padding: '10px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600', alignSelf: 'flex-start'}}>Save Changes</button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'email' && (
-              <div>
-                <h2 style={{fontSize: '20px', fontWeight: '600', marginBottom: '16px', margin: 0}}>Email Settings</h2>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                  <div>
-                    <label style={{display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px'}}>Billing Email</label>
-                    <input type="email" value={settings.billing_email} onChange={(e) => setSettings({...settings, billing_email: e.target.value})} style={{width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', boxSizing: 'border-box'}} />
-                  </div>
-
-                  <div style={{background: '#f0fdf4', border: '1px solid #dcfce7', padding: '12px', borderRadius: '6px'}}>
-                    <p style={{color: '#166534', fontSize: '14px', margin: 0}}>✓ Email verified: admin@company.com</p>
-                  </div>
-
-                  <button style={{background: '#4f46e5', color: 'white', padding: '10px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600', alignSelf: 'flex-start'}}>Save Changes</button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'billing' && (
-              <div>
-                <h2 style={{fontSize: '20px', fontWeight: '600', marginBottom: '16px', margin: 0}}>Billing & Subscription</h2>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                  <div style={{background: '#f3f4f6', padding: '16px', borderRadius: '6px'}}>
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                      <div>
-                        <p style={{fontWeight: '600', color: '#111827', margin: 0}}>{settings.plan} Plan</p>
-                        <p style={{color: '#4b5563', fontSize: '14px', margin: '4px 0 0 0'}}>$299/month</p>
-                      </div>
-                      <button style={{background: '#dc2626', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600'}}>Cancel</button>
-                    </div>
-                  </div>
-
-                  <div style={{background: '#fef2f2', border: '1px solid #fecaca', padding: '12px', borderRadius: '6px'}}>
-                    <p style={{color: '#991b1b', fontSize: '14px', margin: 0}}>Your subscription renews on July 15, 2026</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'team' && (
-              <div>
-                <h2 style={{fontSize: '20px', fontWeight: '600', marginBottom: '16px', margin: 0}}>Team Members</h2>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                  <div style={{background: '#f9fafb', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #4f46e5'}}>
-                    <p style={{fontWeight: '600', color: '#111827', margin: 0}}>You (Admin)</p>
-                    <p style={{color: '#4b5563', fontSize: '14px', margin: '4px 0 0 0'}}>admin@company.com</p>
-                  </div>
-
-                  <button style={{background: '#4f46e5', color: 'white', padding: '10px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600', alignSelf: 'flex-start'}}>Invite Team Member</button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'security' && (
-              <div>
-                <h2 style={{fontSize: '20px', fontWeight: '600', marginBottom: '16px', margin: 0}}>Security Settings</h2>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                  <div>
-                    <label style={{display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px'}}>Change Password</label>
-                    <input type="password" placeholder="Current Password" style={{width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', marginBottom: '8px', boxSizing: 'border-box'}} />
-                    <input type="password" placeholder="New Password" style={{width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', marginBottom: '8px', boxSizing: 'border-box'}} />
-                    <input type="password" placeholder="Confirm Password" style={{width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', boxSizing: 'border-box'}} />
-                  </div>
-
-                  <button style={{background: '#4f46e5', color: 'white', padding: '10px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600', alignSelf: 'flex-start'}}>Update Password</button>
-
-                  <div style={{borderTop: '1px solid #e5e7eb', paddingTop: '16px', marginTop: '16px'}}>
-                    <p style={{color: '#4b5563', fontSize: '14px', marginBottom: '8px', margin: 0}}>Two-Factor Authentication</p>
-                    <button style={{background: '#10b981', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600'}}>Enable 2FA</button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={handleSaveNotifications}
+            disabled={savingNotifications}
+            style={{
+              background: '#4f46e5',
+              color: 'white',
+              padding: '10px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: savingNotifications ? 'not-allowed' : 'pointer',
+              fontWeight: '600',
+              fontSize: '14px',
+              opacity: savingNotifications ? 0.6 : 1,
+            }}
+          >
+            {savingNotifications ? 'Saving...' : 'Save Preferences'}
+          </button>
         </div>
       </div>
     </ProtectedLayout>
